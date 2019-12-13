@@ -58,8 +58,8 @@ object Day2 extends App {
     } yield ((noun, verb), intcode(memory
       .patch(1, Seq(noun), 1)
       .patch(2, Seq(verb), 1))
-      .map(_.memory.head)))
-      .collectFirst { case ((n, v), Right(r)) if r == expected => 100 * n + v }
+      .map(_.memory.headOption)))
+      .collectFirst { case ((n, v), Right(Some(r))) if r == expected => 100 * n + v }
   }
 
   println(part2(input, 19690720))
