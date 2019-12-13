@@ -1,7 +1,7 @@
 import scala.util.Try
 
 object Day2 extends App {
-
+  // Part 1
   case class State(memory: List[Int], pointer: Int)
 
   sealed trait Instruction
@@ -49,4 +49,18 @@ object Day2 extends App {
     .patch(1, Seq(12), 1)
     .patch(2, Seq(2), 1)).map(_.memory.head)
   println(result)
+
+  // Part 2
+  def part2(memory: List[Int], expected: Int): Option[Int] = {
+    (for {
+      noun <- 0 to 99
+      verb <- 0 to 99
+    } yield ((noun, verb), intcode(memory
+      .patch(1, Seq(noun), 1)
+      .patch(2, Seq(verb), 1))
+      .map(_.memory.head)))
+      .collectFirst { case ((n, v), Right(r)) if r == expected => 100 * n + v }
+  }
+
+  println(part2(input, 19690720))
 }
