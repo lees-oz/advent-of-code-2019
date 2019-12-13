@@ -1,12 +1,14 @@
+import scala.util.Try
+
 object Day2 extends App {
 
   case class State(memory: List[Int], pointer: Int)
 
-  sealed abstract class Instruction(val size: Int)
+  sealed trait Instruction
 
-  case object Halt extends Instruction(1)
-  case class Add(par1: Int, par2: Int, to: Int) extends Instruction(4)
-  case class Mul(par1: Int, par2: Int, to: Int) extends Instruction(4)
+  case object Halt extends Instruction
+  case class Add(par1: Int, par2: Int, to: Int) extends Instruction
+  case class Mul(par1: Int, par2: Int, to: Int) extends Instruction
 
   object Instruction {
     def read(from: List[Int]): Either[Throwable, Instruction] =
@@ -24,12 +26,18 @@ object Day2 extends App {
         instruction <- Instruction.read(state.memory.drop(state.pointer))
         result <- instruction match {
           case Halt => Right(state)
-          case Add(op1, op2, res) => run(State(
-            state.memory.updated(res, state.memory(op1) + state.memory(op2)),
-            state.pointer + instruction.size))
-          case Mul(op1, op2, res) => run(State(
-            state.memory.updated(res, state.memory(op1) * state.memory(op2)),
-            state.pointer + instruction.size))
+          case Add(par1, par2, to) =>
+            Try {
+              State(
+                state.memory.updated(to, state.memory(par1) + state.memory(par2)),
+                state.pointer + 4)
+            }.toEither.flatMap(run)
+          case Mul(par1, par2, to) =>
+            Try {
+              State(
+                state.memory.updated(to, state.memory(par1) * state.memory(par2)),
+                state.pointer + 4)
+            }.toEither.flatMap(run)
         }
       } yield result
 
