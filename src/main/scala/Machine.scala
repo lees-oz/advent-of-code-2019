@@ -1,14 +1,20 @@
 import scala.annotation.tailrec
 
-trait Machine[S, I] {
+case class Code[A](dump: List[A], pointer: Int)
+
+// A machine that
+// - runs through CodeMemory[C]
+// - parses I from CodeMemory[C]
+// - executes these instructions, manipulating with data memory D and code memory
+// - in the end, resulting in either error or data D
+trait Machine[C, I, D] {
   @tailrec
-  final def run(program: String, state: S): Either[Throwable, S] = {
-    if(program.isEmpty) Right(state)
+  final def run(code: Code[C], data: D)(implicit parser: Parse[I, C]): Either[Throwable, D] = {
+    if(code.pointer >= code.dump.size) Right(data)
     else {
-      val parsedEither = parse(program)
-      parsedEither match {
-        case Right(i) => execute(i._1, state) match {
-          case Right(s) => run(i._2, s)
+      parser.parse(code) match {
+        case Right(i) => execute(i._1, data) match {
+          case Right(s) => run(Code(code.dump, code.pointer + i._2), s)
           case Left(e) => Left(e)
         }
         case Left(e) => Left(e)
@@ -16,7 +22,9 @@ trait Machine[S, I] {
     }
   }
 
-  def parse(program: String): Either[Throwable, (I, String)]
+  def execute(instruction: I, data: D): Either[Throwable, D]
+}
 
-  def execute(instruction: I, state: S): Either[Throwable, S]
+trait Parse[I, M] {
+  def parse(s: Code[M]): Either[Throwable, (I, Int)]
 }
