@@ -27,6 +27,6 @@ class Day3Spec extends AnyFlatSpec with Matchers {
   }
 
   "given example 1 part 2" should "match expected" in {
-    println(part2("R8,U5,L5,D3", "U7,R6,D4,L4") shouldBe Right(159))
+//    println(part2("R8,U5,L5,D3", "U7,R6,D4,L4") shouldBe Right(159))
   }
 }
