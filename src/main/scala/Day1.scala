@@ -7,7 +7,7 @@ object Day1 extends App {
   def fuel1(mass: Int): Int = mass / 3 - 2
   def fuel1(masses: List[Int]): Int = masses.map(fuel1).sum
 
-  println(input)
+  println(fuel1(input))
 
   // Part 2
   @tailrec
