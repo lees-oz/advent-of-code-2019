@@ -1,14 +1,16 @@
 import scala.util.Try
 
-object Day3 extends IntCode {
-  sealed trait Instruction
+object Day3 {
+  sealed trait Instruction {
+    val distance: Int
+  }
+
   case class Up(distance: Int) extends Instruction
   case class Down(distance: Int) extends Instruction
   case class Left_(distance: Int) extends Instruction
   case class Right_(distance: Int) extends Instruction
 
   case class Edge(from: Point, to: Instruction)
-  case class EdgeWithDistance(from: Point, to: Instruction, distance: Int)
 
   type Point = (Int, Int)
   object Point {
@@ -39,11 +41,6 @@ object Day3 extends IntCode {
     }
   }
 
-  def isBetween(i: Int, range: (Int, Int)): Boolean = {
-    List(range._1 to range._2, range._1 to range._2 by -1)
-      .exists(_.contains(i))
-  }
-
   def cross(edge1: Edge, edge2: Edge): Option[Point] = {
     def edgePoints(e: Edge): List[Point] = {
       (e.to, e.from) match {
@@ -65,16 +62,18 @@ object Day3 extends IntCode {
     implicit val wiresExecutor = new IntExecutor[Instruction, Data] {
       override def execute(instruction: Instruction,
                            data: Data): Either[Throwable, Data] = {
-        val nextPoint = Point(data._2, instruction)
-        Right((Edge(data._2, instruction) :: data._1, nextPoint))
+        val (edges, point) = data
+        val edge = Edge(point, instruction)
+        val nextPoint = Point(point, instruction)
+        Right((edge :: edges, nextPoint))
       }
     }
 
     def manhattanDistance(p: (Int, Int)): Int = Math.abs(p._1) + Math.abs(p._2)
 
     (for {
-      e1 <- run(Code(wire1.split(",").toList, 0), (List[Edge](), (0, 0)))
-      e2 <- run(Code(wire2.split(",").toList, 0), (List[Edge](), (0, 0)))
+      e1 <- IntCode.run(Code(wire1.split(",").toList, 0), (List[Edge](), (0, 0)))
+      e2 <- IntCode.run(Code(wire2.split(",").toList, 0), (List[Edge](), (0, 0)))
     } yield
       for {
         edge1 <- e1._1
@@ -84,56 +83,41 @@ object Day3 extends IntCode {
       .map(_.filter(_ > 0).min)
   }
 
-//  def part2(wire1: String, wire2: String): Either[Throwable, (Int, Int)] = {
-//
-//    type Distance = Int
-//    type Wire = (Instruction, Point)
-//    type Data = List[EdgeWithDistance]
-//
-//    val wiresMachine = new IntCode[Instruction, Data] {
-//      override def execute(instruction: Instruction,
-//                           data: Data): Either[Throwable, Data] =
-//        (
-//          instruction,
-//          data.headOption.map(_.).getOrElse((0, 0)),
-//          data.headOption.map(_._3).getOrElse(0)
-//        ) match {
-//          case (Up(d), (x, y), path) =>
-//            Right((Up(d), (x, y + d), path + d) :: data)
-//          case (Down(d), (x, y), path) =>
-//            Right((Down(d), (x, y - d), path + d) :: data)
-//          case (Right_(d), (x, y), path) =>
-//            Right((Right_(d), (x + d, y), path + d) :: data)
-//          case (Left_(d), (x, y), path) =>
-//            Right((Left_(d), (x - d, y), path + d) :: data)
-//        }
-//    }
-//
-//    def getDistance(from: Point, intersection: Point): Int =
-//      if (from._1 == intersection._1) Math.abs(from._2 - intersection._2)
-//      else if (from._2 == intersection._2) Math.abs(from._1 - intersection._1)
-//      else throw new Exception("Can't measure distance")
-//
-//    def crossWires(v1: Wire, v2: Wire): Option[Point] = {
-//      None
-//    }
-//
-//    (for {
-//      wires1 <- wiresMachine.run(Code(wire1.split(",").toList, 0), Nil)
-//      wires2 <- wiresMachine.run(Code(wire2.split(",").toList, 0), Nil)
-//    } yield
-//      for {
-//        wire1 <- wires1
-//        wire2 <- wires2
-//        crossing <- crossWires(wire1._1, wire2._1)
-//      } yield
-//        (wire1, wire2, crossing) match {
-//          case ((Vertical()), edge2, crossing) =>
-//            (
-//              wire1._3 edge -getDistance(wire1._2, crossing),
-//              getDistance(edge2._2, crossing)
-//            )
-//        }).map(_.head)
-//
-//  }
+  // get minimal sum of distances to first crossing of both wires
+  def part2(wire1: String, wire2: String): Either[Throwable, Int] = {
+    type Distance = Int
+    case class EdgeWithDistance(edge: Edge, distance: Distance)
+
+    type Data = (List[EdgeWithDistance], Point, Distance)
+
+    implicit val wiresMachine = new IntExecutor[Instruction, Data] {
+      override def execute(instruction: Instruction,
+                           data: Data): Either[Throwable, Data] = {
+        val (edges, point, distance) = data
+        val edge = EdgeWithDistance(Edge(point, instruction), distance)
+        val nextPoint = Point(point, instruction)
+        Right((edge :: edges, nextPoint, distance + instruction.distance))
+      }
+    }
+
+    def getDistance(from: Point, intersection: Point): Int =
+      if (from._1 == intersection._1) Math.abs(from._2 - intersection._2)
+      else if (from._2 == intersection._2) Math.abs(from._1 - intersection._1)
+      else throw new Exception("Can't measure distance")
+
+    val init = (List[EdgeWithDistance](), (0, 0), 0)
+
+    (for {
+      edges1 <- IntCode.run(Code(wire1.split(",").toList, 0), init)
+      edges2 <- IntCode.run(Code(wire2.split(",").toList, 0), init)
+    } yield for {
+      edge1 <- edges1._1
+      edge2 <- edges2._1
+      crossing <- cross(edge1.edge, edge2.edge).filter(_ != init._2)
+    } yield (
+      getDistance(edge1.edge.from, crossing) + edge1.distance +
+      getDistance(edge2.edge.from, crossing) + edge2.distance
+    ))
+      .map(_.min)
+  }
 }

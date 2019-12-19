@@ -18,7 +18,7 @@ object Decoder {
  *
  * @returns either error or data D
  */
-trait IntCode {
+object IntCode {
   @tailrec
   final def run[I: Decoder, D](code: Code, data: D)(
     implicit executor: IntExecutor[I, D]
