@@ -57,30 +57,37 @@ object Day3 {
   // Part 1 - get crossing of 2 wires, closest to base
   def part1(wire1: String, wire2: String): Either[Throwable, Int] = {
 
-    type Data = (List[Edge], Point)
+    type Data = (List[Point], Point)
 
     implicit val wiresExecutor = new IntExecutor[Instruction, Data] {
       override def execute(instruction: Instruction,
                            data: Data): Either[Throwable, Data] = {
-        val (edges, point) = data
-        val edge = Edge(point, instruction)
-        val nextPoint = Point(point, instruction)
-        Right((edge :: edges, nextPoint))
+
+        val (points, point) = data
+        val newPoints = (point, instruction) match {
+          case ((x, y), Up(d))     => (y to y + d).map(yy => (x, yy)).toList
+          case ((x, y), Down(d))   => (y to y - d by -1).map(yy => (x, yy)).toList
+          case ((x, y), Right_(d)) => (x to x + d).map(xx => (xx, y)).toList
+          case ((x, y), Left_(d)) =>
+            (x to x - d by -1).map(xx => (xx, y)).toList
+        }
+
+        Right(newPoints ++ points, newPoints.last)
       }
     }
 
-    def manhattanDistance(p: (Int, Int)): Int = Math.abs(p._1) + Math.abs(p._2)
+    def manhattanDistance(p: Point): Int = p._1.abs + p._2.abs
 
     (for {
-      e1 <- IntCode.run(Code(wire1.split(",").toList, 0), (List[Edge](), (0, 0)))
-      e2 <- IntCode.run(Code(wire2.split(",").toList, 0), (List[Edge](), (0, 0)))
-    } yield
-      for {
-        edge1 <- e1._1
-        edge2 <- e2._1
-        crossing <- cross(edge1, edge2)
-      } yield manhattanDistance(crossing))
-      .map(_.filter(_ > 0).min)
+      points1 <- IntCode
+        .run(Code(wire1.split(",").toList, 0), (List[Point](), (0, 0)))
+        .map(_._1)
+
+      points2 <- IntCode
+        .run(Code(wire2.split(",").toList, 0), (List[Point](), (0, 0)))
+        .map(_._1)
+    } yield points1.intersect(points2))
+      .map(_.map(manhattanDistance).filter(_ > 0).min)
   }
 
   // get minimal sum of distances to first crossing of both wires
@@ -96,7 +103,7 @@ object Day3 {
         val (edges, point, distance) = data
         val edge = EdgeWithDistance(Edge(point, instruction), distance)
         val nextPoint = Point(point, instruction)
-        Right((edge :: edges, nextPoint, distance + instruction.distance))
+        Right(edge :: edges, nextPoint, distance + instruction.distance)
       }
     }
 
@@ -110,14 +117,16 @@ object Day3 {
     (for {
       edges1 <- IntCode.run(Code(wire1.split(",").toList, 0), init)
       edges2 <- IntCode.run(Code(wire2.split(",").toList, 0), init)
-    } yield for {
-      edge1 <- edges1._1
-      edge2 <- edges2._1
-      crossing <- cross(edge1.edge, edge2.edge).filter(_ != init._2)
-    } yield (
-      getDistance(edge1.edge.from, crossing) + edge1.distance +
-      getDistance(edge2.edge.from, crossing) + edge2.distance
-    ))
+    } yield
+      for {
+        edge1 <- edges1._1
+        edge2 <- edges2._1
+        crossing <- cross(edge1.edge, edge2.edge).filter(_ != init._2)
+      } yield
+        (
+          getDistance(edge1.edge.from, crossing) + edge1.distance +
+            getDistance(edge2.edge.from, crossing) + edge2.distance
+        ))
       .map(_.min)
   }
 }
