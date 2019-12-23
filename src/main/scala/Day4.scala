@@ -1,26 +1,27 @@
-import scala.annotation.tailrec
+object Day4 extends App {
 
-object Day4 {
+  def neverDecrease(s: String): Boolean = s.sorted == s
 
   def part1(r: Range): Int = {
-    def sameAdjacent(i: Int): Boolean = {
 
-      @tailrec
-      def iterate(s: String, last: Char): Boolean = {
-        if (s.isEmpty) false
-        else if (last == s.head) true
-        else iterate(s.tail, s.head)
-      }
+    def has2Adjacent(s: String): Boolean = s.groupBy(identity).values.exists(_.length >= 2)
 
-      val s = i.toString
-      if (s.isEmpty) false
-      else iterate(s.tail, s.head)
-    }
-
-    def neverDecrease(i: Int): Boolean = i.toString.sorted == i.toString
-
-    r.filter(sameAdjacent)
+    r
+      .map(_.toString)
       .filter(neverDecrease)
+      .filter(has2Adjacent)
+      .size
+  }
+
+  def part2(r: Range): Int = {
+    def neverDecrease(s: String): Boolean = s.sorted == s
+
+    def hasExactly2Adjacent(s: String): Boolean = s.groupBy(identity).values.exists(_.length == 2)
+
+    r
+      .map(_.toString)
+      .filter(neverDecrease)
+      .filter(hasExactly2Adjacent)
       .size
   }
 }
