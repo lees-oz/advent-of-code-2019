@@ -3,7 +3,10 @@ package day5
 import cats.effect.IO
 
 object IntCode5 {
-  case class Code(dump: List[Int], pointer: Int) {
+  type Memory = List[Int]
+  type Address = Int
+
+  case class Code(dump: Memory, pointer: Address) {
     private def tenPower(p: Int): Int =
       if (p == 0) 1
       else 10 * tenPower(p - 1)
@@ -17,32 +20,30 @@ object IntCode5 {
     val opcode: Int = current.head % 100
   }
 
-  case class State[D](code: Code, data: D, input: IO[Int])
+  case class State(code: Code, input: Memory, output: Memory)
 
   trait Decoder[A] {
-    def decode(s: State[_]): IO[A]
+    def decode(s: State): IO[A]
   }
   object Decoder {
     def apply[A](implicit d: Decoder[A]): Decoder[A] = implicitly[Decoder[A]]
   }
 
-  case class Result[D](state: State[D], halt: Boolean = false)
+  case class Result(state: State, halt: Boolean = false)
 
-  trait Executor[I, D] {
-    def execute(instruction: I, state: State[D]): IO[Result[D]]
+  trait Executor[I] {
+    def execute(instruction: I, state: State): IO[Result]
   }
   object Executor {
-    def apply[I, D](implicit executor: Executor[I, D]): Executor[I, D] =
+    def apply[I](implicit executor: Executor[I]): Executor[I] =
       executor
   }
 
   object MemParam {
-    def apply(code: Code, n: Int): IO[Int] = {
-      code.mode(n) match {
-        case 0     => ByRef(code, n)
-        case 1     => ByVal(code, n)
-        case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
-      }
+    def apply(code: Code, n: Int): IO[Int] = code.mode(n) match {
+      case 0     => ByRef(code, n)
+      case 1     => ByVal(code, n)
+      case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
     }
   }
 
@@ -51,21 +52,13 @@ object IntCode5 {
   }
 
   object ByRef {
-    def apply(code: Code, n: Int): IO[Int] = IO {
-      code.dump(code.current(n + 1))
-    }
+    def apply(code: Code, n: Int): IO[Int] = IO { code.dump(code.current(n + 1)) }
   }
 
-  object Input {
-    def apply(): IO[Int] = IO { scala.io.StdIn.readInt() }
-  }
-
-  final def run[I: Decoder, D](
-    state: State[D]
-  )(implicit e: Executor[I, D]): IO[State[D]] =
+  final def run[I: Decoder](state: State)(implicit e: Executor[I]): IO[State] =
     for {
       instruction <- Decoder[I].decode(state)
-      execResult <- Executor[I, D].execute(instruction, state)
+      execResult <- Executor[I].execute(instruction, state)
       result <- {
         if (execResult.halt) IO.pure(execResult.state)
         else run(execResult.state)

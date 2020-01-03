@@ -1,4 +1,3 @@
-import cats.effect.IO
 import day5.Day5.implicits._
 import day5.IntCode5
 import day5.IntCode5._
@@ -53,17 +52,17 @@ class Day5Spec extends AnyFlatSpec with Matchers {
 
   "my sample input part 1" should "be correct" in {
     val res = IntCode5
-      .run(State(Code(input, 0), "", IO.pure(1)))
+      .run(State(Code(input, 0), List(1), Nil))
       .unsafeRunSync()
 
-    res.data should endWith("4601506")
+    res.output.head shouldBe 4601506
   }
 
   "my sample input part 2" should "be correct" in {
     val res = IntCode5
-      .run(State(Code(input, 0), "", IO.pure(5)))
+      .run(State(Code(input, 0), List(5), Nil))
       .unsafeRunSync()
 
-    res.data should endWith("5525561")
+    res.output.head shouldBe 5525561
   }
 }

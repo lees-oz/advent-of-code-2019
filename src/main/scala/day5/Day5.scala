@@ -18,7 +18,7 @@ object Day5 extends App {
 
   object implicits {
 
-    implicit val decoder: Decoder[Instruction] = (s: State[_]) => {
+    implicit val decoder: Decoder[Instruction] = (s: State) => {
       s.code.opcode match {
         case 1 =>
           for {
@@ -34,7 +34,7 @@ object Day5 extends App {
           } yield Mul(par1, par2, to)
         case 3 =>
           for {
-            what <- s.input
+            what <- IO { s.input.head }
             to <- ByVal(s.code, 0)
           } yield Input(what, to)
         case 4 => ByRef(s.code, 0).map(Output.apply)
@@ -65,59 +65,53 @@ object Day5 extends App {
       }
     }
 
-    type ConsoleOutput = String
-
-    implicit val executor: Executor[Instruction, ConsoleOutput] =
-      (instruction: Instruction, s: State[ConsoleOutput]) =>
+    implicit val executor: Executor[Instruction] =
+      (instruction: Instruction, s: State) =>
         instruction match {
           case Add(par1, par2, to) =>
             for {
               dump <- IO(s.code.dump.updated(to, par1 + par2))
               pointer <- IO.pure(s.code.pointer + 4)
-            } yield Result(State(Code(dump, pointer), s.data, s.input))
+            } yield Result(State(Code(dump, pointer), s.input, s.output))
           case Mul(par1, par2, to) =>
             for {
               dump <- IO(s.code.dump.updated(to, par1 * par2))
               pointer <- IO.pure(s.code.pointer + 4)
-            } yield Result(State(Code(dump, pointer), s.data, s.input))
+            } yield Result(State(Code(dump, pointer), s.input, s.output))
           case Input(what, to) =>
             for {
               dump <- IO(s.code.dump.updated(to, what))
               pointer <- IO.pure(s.code.pointer + 2)
-            } yield Result(State(Code(dump, pointer), s.data, s.input))
+            } yield Result(State(Code(dump, pointer), s.input.tail, s.output))
           case Output(what) =>
             for {
               pointer <- IO.pure(s.code.pointer + 2)
-              data <- IO.pure(s.data + "\n" + what)
-            } yield Result(State(Code(s.code.dump, pointer), data, s.input))
+              data <- IO.pure(what :: s.output)
+            } yield Result(State(Code(s.code.dump, pointer), s.input, data))
           case JumpIfTrue(sub, goto) =>
             for {
               pointer <- IO.pure { if (sub != 0) goto else s.code.pointer + 3 }
-            } yield Result(State(Code(s.code.dump, pointer), s.data, s.input))
+            } yield Result(State(Code(s.code.dump, pointer), s.input, s.output))
           case JumpIfFalse(sub, goto) =>
             for {
               pointer <- IO.pure { if (sub == 0) goto else s.code.pointer + 3 }
-            } yield Result(State(Code(s.code.dump, pointer), s.data, s.input))
+            } yield Result(State(Code(s.code.dump, pointer), s.input, s.output))
           case LessThan(left, right, to) =>
             for {
               pointer <- IO.pure(s.code.pointer + 4)
               what <- IO.pure { if (left < right) 1 else 0 }
               dump <- IO.pure { s.code.dump.updated(to, what) }
-            } yield Result(State(Code(dump, pointer), s.data, s.input))
+            } yield Result(State(Code(dump, pointer), s.input, s.output))
           case Equals(left, right, to) =>
             for {
               pointer <- IO.pure { s.code.pointer + 4 }
               what <- IO.pure { if (left == right) 1 else 0 }
             } yield
               Result(
-                State(
-                  Code(s.code.dump.updated(to, what), pointer),
-                  s.data,
-                  s.input
-                )
+                State(Code(s.code.dump.updated(to, what), pointer), s.input, s.output)
               )
           case Halt =>
-            IO.pure(Result(State(s.code, s.data, s.input), true))
+            IO.pure(Result(State(s.code, s.input, s.output), true))
       }
   }
 }
