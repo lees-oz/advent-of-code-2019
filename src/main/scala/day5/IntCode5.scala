@@ -20,7 +20,7 @@ object IntCode5 {
     val opcode: Int = current.head % 100
   }
 
-  case class State(code: Code, input: Memory, output: Memory)
+  case class State(code: Code, input: Memory, output: Memory = Nil)
 
   trait Decoder[A] {
     def decode(s: State): IO[A]
@@ -55,12 +55,12 @@ object IntCode5 {
     def apply(code: Code, n: Int): IO[Int] = IO { code.dump(code.current(n + 1)) }
   }
 
-  final def run[I: Decoder](state: State)(implicit e: Executor[I]): IO[State] =
+  final def run[I: Decoder](state: State)(implicit e: Executor[I]): IO[Memory] =
     for {
       instruction <- Decoder[I].decode(state)
       execResult <- Executor[I].execute(instruction, state)
       result <- {
-        if (execResult.halt) IO.pure(execResult.state)
+        if (execResult.halt) IO.pure(execResult.state.output)
         else run(execResult.state)
       }
     } yield result
