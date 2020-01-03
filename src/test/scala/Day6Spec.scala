@@ -2123,4 +2123,9 @@ class Day6Spec extends AnyFlatSpec with Matchers {
     val result = Day6.part1(input)
     result shouldBe 417916
   }
+
+  "my sample input part 2" should "be correct" in {
+    val result = Day6.part2(input)
+    result shouldBe 523
+  }
 }

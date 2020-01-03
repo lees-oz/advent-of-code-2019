@@ -1,7 +1,5 @@
 import scala.annotation.tailrec
 object Day6 extends App {
-  val code = List("COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L")
-
   @tailrec
   def run(code: List[String], acc: Map[String, String] = Map()): Map[String, String] = {
     if(code.isEmpty) acc
@@ -12,15 +10,25 @@ object Day6 extends App {
   }
 
   @tailrec
-  def count(orbit: String, tree: Map[String, String], acc: Int = 0): Int = {
+  def collect(orbit: String, tree: Map[String, String], acc: List[String] = Nil): List[String] = {
     if (!tree.contains(orbit)) acc
-    else count(tree(orbit), tree, acc + 1)
+    else {
+      val orbitedTo = tree(orbit)
+      collect(orbitedTo, tree, orbitedTo :: acc)
+    }
   }
 
   def part1(code: List[String]): Int = {
     val tree: Map[String, String] = run(code)
     tree.map {
-      case (from, _) => count(from, tree)
-    }.sum
+      case (from, _) => collect(from, tree)
+    }.map(_.size).sum
+  }
+
+  def part2(code: List[String]): Int = {
+    val tree: Map[String, String] = run(code)
+    val your = collect("YOU", tree)
+    val santa = collect("SAN", tree)
+    your.size + santa.size - your.intersect(santa).size * 2
   }
 }
