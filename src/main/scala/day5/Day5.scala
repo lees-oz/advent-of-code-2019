@@ -9,7 +9,7 @@ object Day5 extends App {
   case object Halt extends Instruction
   case class Add(par1: Int, par2: Int, to: Int) extends Instruction
   case class Mul(par1: Int, par2: Int, to: Int) extends Instruction
-  case class Input(what: Int, to: Int) extends Instruction
+  case class Input(what: Option[Int], to: Int) extends Instruction
   case class Output(what: Int) extends Instruction
   case class JumpIfTrue(sub: Int, goto: Int) extends Instruction
   case class JumpIfFalse(sub: Int, goto: Int) extends Instruction
@@ -34,7 +34,7 @@ object Day5 extends App {
           } yield Mul(par1, par2, to)
         case 3 =>
           for {
-            what <- IO { s.input.head }
+            what <- IO { s.input.headOption }
             to <- ByVal(s.code, 0)
           } yield Input(what, to)
         case 4 => ByRef(s.code, 0).map(Output.apply)
@@ -79,10 +79,11 @@ object Day5 extends App {
               pointer <- IO.pure(s.code.pointer + 4)
             } yield Result(State(Code(dump, pointer), s.input, s.output))
           case Input(what, to) =>
-            for {
-              dump <- IO(s.code.dump.updated(to, what))
+            what.map(value => for {
+              dump <- IO(s.code.dump.updated(to, value))
               pointer <- IO.pure(s.code.pointer + 2)
-            } yield Result(State(Code(dump, pointer), s.input.tail, s.output))
+            } yield Result(State(Code(dump, pointer), s.input.tail, s.output)))
+              .getOrElse(IO.pure(Result(s, AwaitInput)))
           case Output(what) =>
             for {
               pointer <- IO.pure(s.code.pointer + 2)
@@ -111,7 +112,7 @@ object Day5 extends App {
                 State(Code(s.code.dump.updated(to, what), pointer), s.input, s.output)
               )
           case Halt =>
-            IO.pure(Result(State(s.code, s.input, s.output), true))
+            IO.pure(Result(State(s.code, s.input, s.output), Halted))
       }
   }
 }

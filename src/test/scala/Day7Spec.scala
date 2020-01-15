@@ -8,4 +8,12 @@ class Day7Spec extends AnyFlatSpec with Matchers {
     Day7.part1(in) shouldBe 47064
   }
 
+  "given example" should "match expected" in {
+    val program = List(3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5)
+    Day7.part2(program) shouldBe 139629729
+  }
+
+  "my sample input part2" should "be correct" in {
+    Day7.part2(in) shouldBe 4248984
+  }
 }

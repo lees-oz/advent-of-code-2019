@@ -55,7 +55,7 @@ class Day5Spec extends AnyFlatSpec with Matchers {
       .run(State(Code(input, 0), List(1), Nil))
       .unsafeRunSync()
 
-    res.head shouldBe 4601506
+    res.state.output.head shouldBe 4601506
   }
 
   "my sample input part 2" should "be correct" in {
@@ -63,6 +63,6 @@ class Day5Spec extends AnyFlatSpec with Matchers {
       .run(State(Code(input, 0), List(5), Nil))
       .unsafeRunSync()
 
-    res.head shouldBe 5525561
+    res.state.output.head shouldBe 5525561
   }
 }

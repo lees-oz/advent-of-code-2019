@@ -1,10 +1,13 @@
 package day5
-
 import cats.effect.IO
-
 object IntCode5 {
   type Memory = List[Int]
   type Address = Int
+
+  sealed trait Status
+  case object Halted extends Status
+  case object Running extends Status
+  case object AwaitInput extends Status
 
   case class Code(dump: Memory, pointer: Address) {
     private def tenPower(p: Int): Int =
@@ -25,18 +28,11 @@ object IntCode5 {
   trait Decoder[A] {
     def decode(s: State): IO[A]
   }
-  object Decoder {
-    def apply[A](implicit d: Decoder[A]): Decoder[A] = implicitly[Decoder[A]]
-  }
 
-  case class Result(state: State, halt: Boolean = false)
+  case class Result(state: State, status: Status = Running)
 
   trait Executor[I] {
     def execute(instruction: I, state: State): IO[Result]
-  }
-  object Executor {
-    def apply[I](implicit executor: Executor[I]): Executor[I] =
-      executor
   }
 
   object MemParam {
@@ -55,13 +51,13 @@ object IntCode5 {
     def apply(code: Code, n: Int): IO[Int] = IO { code.dump(code.current(n + 1)) }
   }
 
-  final def run[I: Decoder](state: State)(implicit e: Executor[I]): IO[Memory] =
+  final def run[I: Decoder: Executor](state: State): IO[Result] =
     for {
-      instruction <- Decoder[I].decode(state)
-      execResult <- Executor[I].execute(instruction, state)
-      result <- {
-        if (execResult.halt) IO.pure(execResult.state.output)
-        else run(execResult.state)
+      instruction <- implicitly[Decoder[I]].decode(state)
+      execResult <- implicitly[Executor[I]].execute(instruction, state)
+      result <- execResult.status match {
+        case Halted | AwaitInput => IO.pure(Result(execResult.state, execResult.status))
+        case _ => run(execResult.state)
       }
     } yield result
 }
