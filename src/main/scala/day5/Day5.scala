@@ -7,14 +7,14 @@ object Day5 extends App {
 
   sealed trait Instruction
   case object Halt extends Instruction
-  case class Add(par1: Int, par2: Int, to: Int) extends Instruction
-  case class Mul(par1: Int, par2: Int, to: Int) extends Instruction
-  case class Input(what: Option[Int], to: Int) extends Instruction
-  case class Output(what: Int) extends Instruction
-  case class JumpIfTrue(sub: Int, goto: Int) extends Instruction
-  case class JumpIfFalse(sub: Int, goto: Int) extends Instruction
-  case class LessThan(left: Int, right: Int, to: Int) extends Instruction
-  case class Equals(left: Int, right: Int, to: Int) extends Instruction
+  case class Add(par1: Long, par2: Long, to: Address) extends Instruction
+  case class Mul(par1: Long, par2: Long, to: Address) extends Instruction
+  case class Input(what: Option[Long], to: Address) extends Instruction
+  case class Output(what: Long) extends Instruction
+  case class JumpIfTrue(sub: Long, goto: Address) extends Instruction
+  case class JumpIfFalse(sub: Long, goto: Address) extends Instruction
+  case class LessThan(left: Long, right: Long, to: Address) extends Instruction
+  case class Equals(left: Long, right: Long, to: Address) extends Instruction
 
   object implicits {
 
@@ -24,41 +24,44 @@ object Day5 extends App {
           for {
             par1 <- MemParam(s.code, 0)
             par2 <- MemParam(s.code, 1)
-            to <- ByVal(s.code, 2)
+            to <- ByVal(s.code, 2).map(_.toInt)
           } yield Add(par1, par2, to)
         case 2 =>
           for {
             par1 <- MemParam(s.code, 0)
             par2 <- MemParam(s.code, 1)
-            to <- ByVal(s.code, 2)
+            to <- ByVal(s.code, 2).map(_.toInt)
           } yield Mul(par1, par2, to)
         case 3 =>
           for {
             what <- IO { s.input.headOption }
-            to <- ByVal(s.code, 0)
+            to <- ByVal(s.code, 0).map(_.toInt)
           } yield Input(what, to)
-        case 4 => ByRef(s.code, 0).map(Output.apply)
+        case 4 =>
+          for {
+            what <- MemParam(s.code, 0)
+          } yield Output(what)
         case 5 =>
           for {
             sub <- MemParam(s.code, 0)
-            goto <- MemParam(s.code, 1)
+            goto <- MemParam(s.code, 1).map(_.toInt)
           } yield JumpIfTrue(sub, goto)
         case 6 =>
           for {
             sub <- MemParam(s.code, 0)
-            goto <- MemParam(s.code, 1)
+            goto <- MemParam(s.code, 1).map(_.toInt)
           } yield JumpIfFalse(sub, goto)
         case 7 =>
           for {
             left <- MemParam(s.code, 0)
             right <- MemParam(s.code, 1)
-            to <- ByVal(s.code, 2)
+            to <- ByVal(s.code, 2).map(_.toInt)
           } yield LessThan(left, right, to)
         case 8 =>
           for {
             left <- MemParam(s.code, 0)
             right <- MemParam(s.code, 1)
-            to <- ByVal(s.code, 2)
+            to <- ByVal(s.code, 2).map(_.toInt)
           } yield Equals(left, right, to)
         case 99    => IO.pure(Halt)
         case i @ _ => IO.raiseError(new Exception(s"Unknown instruction $i"))
@@ -99,17 +102,16 @@ object Day5 extends App {
             } yield Result(State(Code(s.code.dump, pointer), s.input, s.output))
           case LessThan(left, right, to) =>
             for {
-              pointer <- IO.pure(s.code.pointer + 4)
               what <- IO.pure { if (left < right) 1 else 0 }
-              dump <- IO.pure { s.code.dump.updated(to, what) }
-            } yield Result(State(Code(dump, pointer), s.input, s.output))
+              dump <- IO.pure { s.code.dump.updated(to, what.toLong) }
+            } yield Result(State(Code(dump, s.code.pointer + 4), s.input, s.output))
           case Equals(left, right, to) =>
             for {
               pointer <- IO.pure { s.code.pointer + 4 }
               what <- IO.pure { if (left == right) 1 else 0 }
             } yield
               Result(
-                State(Code(s.code.dump.updated(to, what), pointer), s.input, s.output)
+                State(Code(s.code.dump.updated(to, what.toLong), pointer), s.input, s.output)
               )
           case Halt =>
             IO.pure(Result(State(s.code, s.input, s.output), Halted))

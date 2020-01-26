@@ -1,7 +1,7 @@
 package day5
 import cats.effect.IO
 object IntCode5 {
-  type Memory = List[Int]
+  type Memory = List[Long]
   type Address = Int
 
   sealed trait Status
@@ -14,13 +14,13 @@ object IntCode5 {
       if (p == 0) 1
       else 10 * tenPower(p - 1)
 
-    private def modes: Int = current.head / 100
+    private def modes: Int = (current.head / 100).toInt
 
     def mode(n: Int): Int = modes % tenPower(n + 1) / tenPower(n)
 
-    val current: List[Int] = dump.drop(pointer)
+    val current: Memory = dump.drop(pointer)
 
-    val opcode: Int = current.head % 100
+    val opcode: Int = (current.head % 100).toInt
   }
 
   case class State(code: Code, input: Memory, output: Memory = Nil)
@@ -36,7 +36,7 @@ object IntCode5 {
   }
 
   object MemParam {
-    def apply(code: Code, n: Int): IO[Int] = code.mode(n) match {
+    def apply(code: Code, n: Int): IO[Long] = code.mode(n) match {
       case 0     => ByRef(code, n)
       case 1     => ByVal(code, n)
       case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
@@ -44,11 +44,11 @@ object IntCode5 {
   }
 
   object ByVal {
-    def apply(code: Code, n: Int): IO[Int] = IO { code.current(n + 1) }
+    def apply(code: Code, n: Int): IO[Long] = IO { code.current(n + 1) }
   }
 
   object ByRef {
-    def apply(code: Code, n: Int): IO[Int] = IO { code.dump(code.current(n + 1)) }
+    def apply(code: Code, n: Int): IO[Long] = IO { code.dump(code.current(n + 1).toInt) }
   }
 
   final def run[I: Decoder: Executor](state: State): IO[Result] =

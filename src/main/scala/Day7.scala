@@ -5,8 +5,8 @@ import day5.IntCode5._
 import day5.Day5.implicits._
 
 object Day7 {
-  private def runAmps(program: List[Int]): IO[Int] = {
-    def runAmp(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Int = 0): IO[Int] =
+  private def runAmps(program: Memory): IO[Long] = {
+    def runAmp(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Long = 0): IO[Long] =
       if (phaseSettings.isEmpty) IO.pure(prevOut)
       else IntCode5.run(State(code, List(phaseSettings.head, prevOut), Nil)).flatMap {
         case Result(state, _) => runAmp(code, phaseSettings.tail, state.output.head)
@@ -18,10 +18,10 @@ object Day7 {
       .traverse(p => runAmp(Code(program, 0), p))
       .map(_.max)
   }
-  def part1(program: List[Int]): Int = runAmps(program).unsafeRunSync()
+  def part1(program: Memory): Long = runAmps(program).unsafeRunSync()
 
-  def part2(program: List[Int]): Int = {
-    def runAmps(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Int = 0, amps: List[State] = Nil): IO[(Int, List[State])] = {
+  def part2(program: Memory): Long = {
+    def runAmps(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Long = 0, amps: List[State] = Nil): IO[(Long, List[State])] = {
       if (phaseSettings.isEmpty) IO.pure((prevOut, amps))
       else {
         val amp = State(code, List(phaseSettings.head, prevOut), Nil)
@@ -31,7 +31,7 @@ object Day7 {
       }
     }
 
-    def runAmpsLoop(amps: List[State], prevOut: Int): IO[Int] = {
+    def runAmpsLoop(amps: List[State], prevOut: Long): IO[Long] = {
       amps.foldLeft(IO.pure((List[State](), prevOut, true))) ((acc, amp) => {
         for {
           input <- acc.map(_._2)
