@@ -13,6 +13,6 @@ class Day9Spec extends AnyFlatSpec with Matchers {
 
     import day5.Day5.implicits._
 
-    IntCode5.run(s).unsafeRunSync().state.output shouldBe 1125899906842624L
+    IntCode5.run(s).unsafeRunSync().state.output shouldBe List(1125899906842624L)
   }
 }
