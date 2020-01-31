@@ -20,13 +20,12 @@ object IntCode5 {
       if (p == 0) 1
       else 10 * tenPower(p - 1)
 
-    private def modes: Int = (current.head / 100).toInt
+    private def modes: Int = (current / 100).toInt
 
     def mode(n: Int): Int = modes % tenPower(n + 1) / tenPower(n)
 
-    val current: Memory = dump.drop(pointer)
-
-    val opcode: Int = (current.head % 100).toInt
+    lazy val current: Long = dump(pointer.toInt)
+    lazy val opcode: Int = (current % 100).toInt
   }
 
   case class State(code: Code, input: Memory, output: Memory = Nil)
