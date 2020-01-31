@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class Day5Spec extends AnyFlatSpec with Matchers {
-  val input = List(3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 1102, 16,
+  val input = Memory(List(3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 1102, 16,
     13, 225, 1001, 88, 68, 224, 101, -114, 224, 224, 4, 224, 1002, 223, 8, 223,
     1001, 224, 2, 224, 1, 223, 224, 223, 1101, 8, 76, 224, 101, -84, 224, 224,
     4, 224, 102, 8, 223, 223, 101, 1, 224, 224, 1, 224, 223, 223, 1101, 63, 58,
@@ -48,7 +48,7 @@ class Day5Spec extends AnyFlatSpec with Matchers {
     107, 677, 677, 224, 1002, 223, 2, 223, 1006, 224, 644, 101, 1, 223, 223,
     1007, 677, 226, 224, 1002, 223, 2, 223, 1006, 224, 659, 101, 1, 223, 223, 8,
     226, 677, 224, 102, 2, 223, 223, 1005, 224, 674, 1001, 223, 1, 223, 4, 223,
-    99, 226).map(_.toLong)
+    99, 226).map(_.toLong))
 
   "my sample input part 1" should "be correct" in {
     val res = IntCode5

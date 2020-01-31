@@ -168,10 +168,8 @@ object Day3 {
         edge2 <- edges2._1
         crossing <- cross(edge1.edge, edge2.edge).filter(_ != init._2)
       } yield
-        (
-          getDistance(edge1.edge.from, crossing) + edge1.distance +
-            getDistance(edge2.edge.from, crossing) + edge2.distance
-        ))
+        getDistance(edge1.edge.from, crossing) + edge1.distance +
+            getDistance(edge2.edge.from, crossing) + edge2.distance )
       .map(_.min)
   }
 }

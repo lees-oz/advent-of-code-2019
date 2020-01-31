@@ -24,18 +24,18 @@ object Day5 extends App {
           for {
             par1 <- s.code.param(0)
             par2 <- s.code.param(1)
-            to <- ByVal(s.code, 2).map(_.toInt)
+            to <- ByVal(s.code, 2)
           } yield Add(par1, par2, to)
         case 2 =>
           for {
             par1 <- s.code.param(0)
             par2 <- s.code.param(1)
-            to <- ByVal(s.code, 2).map(_.toInt)
+            to <- ByVal(s.code, 2)
           } yield Mul(par1, par2, to)
         case 3 =>
           for {
             what <- IO { s.input.headOption }
-            to <- ByVal(s.code, 0).map(_.toInt)
+            to <- ByVal(s.code, 0)
           } yield Input(what, to)
         case 4 =>
           for {
@@ -44,24 +44,24 @@ object Day5 extends App {
         case 5 =>
           for {
             sub <- s.code.param(0)
-            goto <- s.code.param(1).map(_.toInt)
+            goto <- s.code.param(1)
           } yield JumpIfTrue(sub, goto)
         case 6 =>
           for {
             sub <- s.code.param(0)
-            goto <- s.code.param(1).map(_.toInt)
+            goto <- s.code.param(1)
           } yield JumpIfFalse(sub, goto)
         case 7 =>
           for {
             left <- s.code.param(0)
             right <- s.code.param(1)
-            to <- ByVal(s.code, 2).map(_.toInt)
+            to <- ByVal(s.code, 2)
           } yield LessThan(left, right, to)
         case 8 =>
           for {
             left <- s.code.param(0)
             right <- s.code.param(1)
-            to <- ByVal(s.code, 2).map(_.toInt)
+            to <- ByVal(s.code, 2)
           } yield Equals(left, right, to)
         case 99    => IO.pure(Halt)
         case i @ _ => IO.raiseError(new Exception(s"Unknown instruction $i"))

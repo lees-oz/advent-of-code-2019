@@ -1,8 +1,12 @@
 package day5
 import cats.effect.IO
 object IntCode5 {
-  type Memory = List[Long]
-  type Address = Int
+  type Memory = Map[Long, Long]
+  type Address = Long
+
+  object Memory {
+    def apply(l: List[Long]): Memory = (0L to l.size - 1).zip(l).toMap
+  }
 
   sealed trait Status
   case object Halted extends Status
@@ -24,11 +28,11 @@ object IntCode5 {
 
     def mode(n: Int): Int = modes % tenPower(n + 1) / tenPower(n)
 
-    lazy val current: Long = dump(pointer.toInt)
+    lazy val current: Long = dump(pointer)
     lazy val opcode: Int = (current % 100).toInt
   }
 
-  case class State(code: Code, input: Memory, output: Memory = Nil)
+  case class State(code: Code, input: List[Long], output: List[Long] = Nil)
 
   trait Decoder[A] {
     def decode(s: State): IO[A]
@@ -45,7 +49,7 @@ object IntCode5 {
   }
 
   object ByRef {
-    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump(v.toInt))
+    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump(v))
   }
 
   final def run[I: Decoder: Executor](state: State): IO[Result] =
