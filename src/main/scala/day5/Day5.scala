@@ -22,14 +22,14 @@ object Day5 extends App {
       s.code.opcode match {
         case 1 =>
           for {
-            par1 <- MemParam(s.code, 0)
-            par2 <- MemParam(s.code, 1)
+            par1 <- s.code.param(0)
+            par2 <- s.code.param(1)
             to <- ByVal(s.code, 2).map(_.toInt)
           } yield Add(par1, par2, to)
         case 2 =>
           for {
-            par1 <- MemParam(s.code, 0)
-            par2 <- MemParam(s.code, 1)
+            par1 <- s.code.param(0)
+            par2 <- s.code.param(1)
             to <- ByVal(s.code, 2).map(_.toInt)
           } yield Mul(par1, par2, to)
         case 3 =>
@@ -39,28 +39,28 @@ object Day5 extends App {
           } yield Input(what, to)
         case 4 =>
           for {
-            what <- MemParam(s.code, 0)
+            what <- s.code.param(0)
           } yield Output(what)
         case 5 =>
           for {
-            sub <- MemParam(s.code, 0)
-            goto <- MemParam(s.code, 1).map(_.toInt)
+            sub <- s.code.param(0)
+            goto <- s.code.param(1).map(_.toInt)
           } yield JumpIfTrue(sub, goto)
         case 6 =>
           for {
-            sub <- MemParam(s.code, 0)
-            goto <- MemParam(s.code, 1).map(_.toInt)
+            sub <- s.code.param(0)
+            goto <- s.code.param(1).map(_.toInt)
           } yield JumpIfFalse(sub, goto)
         case 7 =>
           for {
-            left <- MemParam(s.code, 0)
-            right <- MemParam(s.code, 1)
+            left <- s.code.param(0)
+            right <- s.code.param(1)
             to <- ByVal(s.code, 2).map(_.toInt)
           } yield LessThan(left, right, to)
         case 8 =>
           for {
-            left <- MemParam(s.code, 0)
-            right <- MemParam(s.code, 1)
+            left <- s.code.param(0)
+            right <- s.code.param(1)
             to <- ByVal(s.code, 2).map(_.toInt)
           } yield Equals(left, right, to)
         case 99    => IO.pure(Halt)

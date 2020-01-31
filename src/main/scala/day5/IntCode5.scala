@@ -10,6 +10,14 @@ object IntCode5 {
   case object AwaitInput extends Status
 
   case class Code(dump: Memory, pointer: Address) {
+
+      def param(i: Int): IO[Long] = mode(i) match {
+        case 0     => ByRef(this, i)
+        case 1     => ByVal(this, i)
+        case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
+      }
+
+
     private def tenPower(p: Int): Int =
       if (p == 0) 1
       else 10 * tenPower(p - 1)
@@ -35,13 +43,7 @@ object IntCode5 {
     def execute(instruction: I, state: State): IO[Result]
   }
 
-  object MemParam {
-    def apply(code: Code, n: Int): IO[Long] = code.mode(n) match {
-      case 0     => ByRef(code, n)
-      case 1     => ByVal(code, n)
-      case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
-    }
-  }
+
 
   object ByVal {
     def apply(code: Code, n: Int): IO[Long] = IO { code.current(n + 1) }
