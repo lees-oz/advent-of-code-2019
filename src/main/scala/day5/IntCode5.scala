@@ -56,7 +56,7 @@ object IntCode5 {
       instruction <- implicitly[Decoder[I]].decode(state)
       execResult <- implicitly[Executor[I]].execute(instruction, state)
       result <- execResult.status match {
-        case Halted | AwaitInput => IO.pure(Result(execResult.state, execResult.status))
+        case Halted | AwaitInput => IO.pure(execResult)
         case _ => run(execResult.state)
       }
     } yield result
