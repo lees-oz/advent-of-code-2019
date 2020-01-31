@@ -42,11 +42,11 @@ object IntCode5 {
   }
 
   object ByVal {
-    def apply(code: Code, n: Int): IO[Long] = IO { code.current(n + 1) }
+    def apply(code: Code, n: Int): IO[Long] = IO { code.dump(code.pointer + 1 + n) }
   }
 
   object ByRef {
-    def apply(code: Code, n: Int): IO[Long] = IO { code.dump(code.current(n + 1).toInt) }
+    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump(v.toInt))
   }
 
   final def run[I: Decoder: Executor](state: State): IO[Result] =
