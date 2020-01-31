@@ -15,7 +15,7 @@ object Day7 {
     (0 to 4).toList
       .permutations
       .toList
-      .traverse(p => runAmp(Code(program, 0), p))
+      .traverse(p => runAmp(Code(program, 0, 0), p))
       .map(_.max)
   }
   def part1(program: Memory): Long = runAmps(program).unsafeRunSync()
@@ -51,7 +51,7 @@ object Day7 {
       .permutations
       .toList
       .traverse(p => for {
-        init <- runAmps(Code(program, 0), p)
+        init <- runAmps(Code(program, 0, 0), p)
         runResult <- runAmpsLoop(init._2.reverse, init._1)
       } yield runResult)
       .map(_.max)

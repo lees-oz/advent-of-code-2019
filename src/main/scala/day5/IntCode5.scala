@@ -13,10 +13,11 @@ object IntCode5 {
   case object Running extends Status
   case object AwaitInput extends Status
 
-  case class Code(dump: Memory, pointer: Address) {
+  case class Code(dump: Memory, pointer: Address, base: Long) {
     def param(i: Int): IO[Long] = mode(i) match {
       case 0     => ByRef(this, i)
       case 1     => ByVal(this, i)
+      case 2     => ByBase(this, i)
       case m @ _ => IO.raiseError(new Exception(s"Unknown param mode $m"))
     }
 
@@ -32,6 +33,19 @@ object IntCode5 {
     lazy val opcode: Int = (current % 100).toInt
   }
 
+
+  object ByVal {
+    def apply(code: Code, n: Int): IO[Long] = IO { code.dump(code.pointer + 1 + n) }
+  }
+
+  object ByRef {
+    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump.getOrElse(v, 0))
+  }
+
+  object ByBase {
+    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump(v + code.base))
+  }
+
   case class State(code: Code, input: List[Long], output: List[Long] = Nil)
 
   trait Decoder[A] {
@@ -44,13 +58,6 @@ object IntCode5 {
     def execute(instruction: I, state: State): IO[Result]
   }
 
-  object ByVal {
-    def apply(code: Code, n: Int): IO[Long] = IO { code.dump(code.pointer + 1 + n) }
-  }
-
-  object ByRef {
-    def apply(code: Code, n: Int): IO[Long] = ByVal(code, n).map(v => code.dump(v))
-  }
 
   final def run[I: Decoder: Executor](state: State): IO[Result] =
     for {

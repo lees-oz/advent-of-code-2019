@@ -52,7 +52,7 @@ class Day5Spec extends AnyFlatSpec with Matchers {
 
   "my sample input part 1" should "be correct" in {
     val res = IntCode5
-      .run(State(Code(input, 0), List(1), Nil))
+      .run(State(Code(input, 0, 0), List(1), Nil))
       .unsafeRunSync()
 
     res.state.output.head shouldBe 4601506
@@ -60,7 +60,7 @@ class Day5Spec extends AnyFlatSpec with Matchers {
 
   "my sample input part 2" should "be correct" in {
     val res = IntCode5
-      .run(State(Code(input, 0), List(5), Nil))
+      .run(State(Code(input, 0, 0), List(5), Nil))
       .unsafeRunSync()
 
     res.state.output.head shouldBe 5525561

@@ -15,6 +15,7 @@ object Day5 extends App {
   case class JumpIfFalse(sub: Long, goto: Address) extends Instruction
   case class LessThan(left: Long, right: Long, to: Address) extends Instruction
   case class Equals(left: Long, right: Long, to: Address) extends Instruction
+  case class ShiftBase(shift: Long) extends Instruction
 
   object implicits {
 
@@ -63,6 +64,10 @@ object Day5 extends App {
             right <- s.code.param(1)
             to <- ByVal(s.code, 2)
           } yield Equals(left, right, to)
+        case 9 =>
+          for {
+            shift <- s.code.param(0)
+          } yield ShiftBase(shift)
         case 99    => IO.pure(Halt)
         case i @ _ => IO.raiseError(new Exception(s"Unknown instruction $i"))
       }
@@ -75,44 +80,49 @@ object Day5 extends App {
             for {
               dump <- IO(s.code.dump.updated(to, par1 + par2))
               pointer <- IO.pure(s.code.pointer + 4)
-            } yield Result(State(Code(dump, pointer), s.input, s.output))
+            } yield Result(State(Code(dump, pointer, s.code.base), s.input, s.output))
           case Mul(par1, par2, to) =>
             for {
               dump <- IO(s.code.dump.updated(to, par1 * par2))
               pointer <- IO.pure(s.code.pointer + 4)
-            } yield Result(State(Code(dump, pointer), s.input, s.output))
+            } yield Result(State(Code(dump, pointer, s.code.base), s.input, s.output))
           case Input(what, to) =>
             what.map(value => for {
               dump <- IO(s.code.dump.updated(to, value))
               pointer <- IO.pure(s.code.pointer + 2)
-            } yield Result(State(Code(dump, pointer), s.input.tail, s.output)))
+            } yield Result(State(Code(dump, pointer, s.code.base), s.input.tail, s.output)))
               .getOrElse(IO.pure(Result(s, AwaitInput)))
           case Output(what) =>
             for {
               pointer <- IO.pure(s.code.pointer + 2)
               data <- IO.pure(what :: s.output)
-            } yield Result(State(Code(s.code.dump, pointer), s.input, data))
+            } yield Result(State(Code(s.code.dump, pointer, s.code.base), s.input, data))
           case JumpIfTrue(sub, goto) =>
             for {
               pointer <- IO.pure { if (sub != 0) goto else s.code.pointer + 3 }
-            } yield Result(State(Code(s.code.dump, pointer), s.input, s.output))
+            } yield Result(State(Code(s.code.dump, pointer, s.code.base), s.input, s.output))
           case JumpIfFalse(sub, goto) =>
             for {
               pointer <- IO.pure { if (sub == 0) goto else s.code.pointer + 3 }
-            } yield Result(State(Code(s.code.dump, pointer), s.input, s.output))
+            } yield Result(State(Code(s.code.dump, pointer, s.code.base), s.input, s.output))
           case LessThan(left, right, to) =>
             for {
               what <- IO.pure { if (left < right) 1 else 0 }
               dump <- IO.pure { s.code.dump.updated(to, what.toLong) }
-            } yield Result(State(Code(dump, s.code.pointer + 4), s.input, s.output))
+            } yield Result(State(Code(dump, s.code.pointer + 4, s.code.base), s.input, s.output))
           case Equals(left, right, to) =>
             for {
               pointer <- IO.pure { s.code.pointer + 4 }
               what <- IO.pure { if (left == right) 1 else 0 }
             } yield
               Result(
-                State(Code(s.code.dump.updated(to, what.toLong), pointer), s.input, s.output)
+                State(Code(s.code.dump.updated(to, what.toLong), pointer, s.code.base), s.input, s.output)
               )
+          case ShiftBase(shift) =>
+            for {
+              pointer <- IO.pure { s.code.pointer + 2 }
+              base <- IO.pure { s.code.base + shift }
+            } yield Result(State(Code(s.code.dump, pointer, base), s.input, s.output))
           case Halt =>
             IO.pure(Result(State(s.code, s.input, s.output), Halted))
       }
