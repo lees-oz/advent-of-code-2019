@@ -48,7 +48,7 @@ class Day5Spec extends AnyFlatSpec with Matchers {
     107, 677, 677, 224, 1002, 223, 2, 223, 1006, 224, 644, 101, 1, 223, 223,
     1007, 677, 226, 224, 1002, 223, 2, 223, 1006, 224, 659, 101, 1, 223, 223, 8,
     226, 677, 224, 102, 2, 223, 223, 1005, 224, 674, 1001, 223, 1, 223, 4, 223,
-    99, 226).map(_.toLong))
+    99, 226))
 
   "my sample input part 1" should "be correct" in {
     val res = IntCode5
