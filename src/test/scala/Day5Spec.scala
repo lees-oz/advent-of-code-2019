@@ -1,5 +1,5 @@
 import day5.Day5.implicits._
-import day5.IntCode5
+import day5.{Code, IntCode5}
 import day5.IntCode5._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

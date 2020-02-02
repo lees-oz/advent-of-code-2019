@@ -1,12 +1,12 @@
 import cats.effect.IO
 import cats.implicits._
-import day5.IntCode5
+import day5.{Code, IntCode5}
 import day5.IntCode5._
 import day5.Day5.implicits._
 
 object Day7 {
   private def runAmps(program: Memory): IO[Long] = {
-    def runAmp(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Long = 0): IO[Long] =
+    def runAmp(code: Code, phaseSettings: List[Int], prevOut: Long = 0): IO[Long] =
       if (phaseSettings.isEmpty) IO.pure(prevOut)
       else IntCode5.run(State(code, List(phaseSettings.head, prevOut), Nil)).flatMap {
         case Result(state, _) => runAmp(code, phaseSettings.tail, state.output.head)
@@ -21,7 +21,7 @@ object Day7 {
   def part1(program: Memory): Long = runAmps(program).unsafeRunSync()
 
   def part2(program: Memory): Long = {
-    def runAmps(code: IntCode5.Code, phaseSettings: List[Int], prevOut: Long = 0, amps: List[State] = Nil): IO[(Long, List[State])] = {
+    def runAmps(code: Code, phaseSettings: List[Int], prevOut: Long = 0, amps: List[State] = Nil): IO[(Long, List[State])] = {
       if (phaseSettings.isEmpty) IO.pure((prevOut, amps))
       else {
         val amp = State(code, List(phaseSettings.head, prevOut), Nil)

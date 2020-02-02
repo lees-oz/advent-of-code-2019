@@ -7,69 +7,31 @@ object Day5 extends App {
 
   sealed trait Instruction
   case object Halt extends Instruction
-  case class Add(par1: Long, par2: Long, to: Address) extends Instruction
-  case class Mul(par1: Long, par2: Long, to: Address) extends Instruction
-  case class Input(what: Option[Long], to: Address) extends Instruction
+  case class Add(par1: Long, par2: Long, to: Long) extends Instruction
+  case class Mul(par1: Long, par2: Long, to: Long) extends Instruction
+  case class Input(what: Option[Long], to: Long) extends Instruction
   case class Output(what: Long) extends Instruction
-  case class JumpIfTrue(sub: Long, goto: Address) extends Instruction
-  case class JumpIfFalse(sub: Long, goto: Address) extends Instruction
-  case class LessThan(left: Long, right: Long, to: Address) extends Instruction
-  case class Equals(left: Long, right: Long, to: Address) extends Instruction
+  case class JumpIfTrue(sub: Long, goto: Long) extends Instruction
+  case class JumpIfFalse(sub: Long, goto: Long) extends Instruction
+  case class LessThan(left: Long, right: Long, to: Long) extends Instruction
+  case class Equals(left: Long, right: Long, to: Long) extends Instruction
   case class ShiftBase(shift: Long) extends Instruction
 
   object implicits {
 
     implicit val decoder: Decoder[Instruction] = (s: State) => {
       s.code.opcode match {
-        case 1 =>
-          for {
-            par1 <- s.code.param(0)
-            par2 <- s.code.param(1)
-            to <- ByVal(s.code, 2)
-          } yield Add(par1, par2, to)
-        case 2 =>
-          for {
-            par1 <- s.code.param(0)
-            par2 <- s.code.param(1)
-            to <- ByVal(s.code, 2)
-          } yield Mul(par1, par2, to)
-        case 3 =>
-          for {
-            what <- IO { s.input.headOption }
-            to <- ByVal(s.code, 0)
-          } yield Input(what, to)
-        case 4 =>
-          for {
-            what <- s.code.param(0)
-          } yield Output(what)
-        case 5 =>
-          for {
-            sub <- s.code.param(0)
-            goto <- s.code.param(1)
-          } yield JumpIfTrue(sub, goto)
-        case 6 =>
-          for {
-            sub <- s.code.param(0)
-            goto <- s.code.param(1)
-          } yield JumpIfFalse(sub, goto)
-        case 7 =>
-          for {
-            left <- s.code.param(0)
-            right <- s.code.param(1)
-            to <- ByVal(s.code, 2)
-          } yield LessThan(left, right, to)
-        case 8 =>
-          for {
-            left <- s.code.param(0)
-            right <- s.code.param(1)
-            to <- ByVal(s.code, 2)
-          } yield Equals(left, right, to)
-        case 9 =>
-          for {
-            shift <- s.code.param(0)
-          } yield ShiftBase(shift)
-        case 99    => IO.pure(Halt)
-        case i @ _ => IO.raiseError(new Exception(s"Unknown instruction $i"))
+        case 1 => IO(Add(s.code.getReadPar(0), s.code.getReadPar(1), s.code.getWritePar(2)))
+        case 2 => IO(Mul(s.code.getReadPar(0), s.code.getReadPar(1), s.code.getWritePar(2)))
+        case 3 => IO(Input(s.input.headOption, s.code.getWritePar(0)))
+        case 4 => IO(Output(s.code.getReadPar(0)))
+        case 5 => IO(JumpIfTrue(s.code.getReadPar(0), s.code.getReadPar(1)))
+        case 6 => IO(JumpIfFalse(s.code.getReadPar(0), s.code.getReadPar(1)))
+        case 7 => IO(LessThan(s.code.getReadPar(0), s.code.getReadPar(1), s.code.getWritePar(2)))
+        case 8 => IO(Equals(s.code.getReadPar(0), s.code.getReadPar(1), s.code.getWritePar(2)))
+        case 9 => IO(ShiftBase(s.code.getReadPar(0)))
+        case 99  => IO.pure(Halt)
+        case i@_ => IO.raiseError(new Exception(s"Unknown instruction $i"))
       }
     }
 
@@ -124,7 +86,7 @@ object Day5 extends App {
               base <- IO.pure { s.code.base + shift }
             } yield Result(State(Code(s.code.dump, pointer, base), s.input, s.output))
           case Halt =>
-            IO.pure(Result(State(s.code, s.input, s.output), Halted))
+            IO.pure(Result(s, Halted))
       }
   }
 }
