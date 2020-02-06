@@ -53,6 +53,14 @@ object Day10 extends App {
     space.asteroids.map(a => space.getVisibleAsteroids(a).size).max
   }
 
+  def part2(map: String, pov: Point): Int = {
+    var space = Space(map)
+    type PointWithVector = (Point, Point)
+
+//    val visible = space.getVisibleAsteroids(pov).map()
+    ???
+  }
+
   def renderSpace(base: Point, shadows: Set[Point], asteroids: Set[Point], size: Point): String = {
     (0 to size._2 - 1).flatMap(j => {
       '\n' :: (0 to size._1 - 1).map(i => {
