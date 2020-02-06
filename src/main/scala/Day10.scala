@@ -2,59 +2,55 @@ import scala.annotation.tailrec
 object Day10 extends App {
   type Point = (Int, Int)
 
-  def getGcd(a: Int, b: Int): Int = {
-    if(a == 0) b.abs
-    else if(b == 0) a.abs
-    else {
-      val sorted = List(a.abs, b.abs).sorted
+  @tailrec
+  final def getGcd(a: Int, b: Int): Int = if (b == 0) math.abs(a) else getGcd(b, a % b)
+
+  object Space {
+    def apply(map: String): Space = {
+      val lines = map.split("\n").filter(_.nonEmpty)
+      val asteroids: Set[Point] = lines.zipWithIndex.flatMap {
+        case (s, j) => s.zipWithIndex collect {
+          case (c, i) if c == '#' => (i, j)
+        }
+      }.toSet
+      val size = (lines.head.size, lines.size)
+
+      Space(asteroids, size)
+    }
+  }
+
+  case class Space(asteroids: Set[Point], size: Point) {
+    private def pointIsInside(point: Point, size: Point): Boolean = point._1 >= 0 && point._1 <= size._1 && point._2 >= 0 && point._2 <= size._2
+
+    private def getShadowVector(pov: Point, at: Point): Point = {
+      val vector = (at._1 - pov._1, at._2 - pov._2)
+      val gcd = getGcd(vector._1, vector._2)
+      (vector._1 / gcd, vector._2 / gcd)
+    }
+
+    private def getShadow(pov: Point, at: Point): Set[Point] = {
 
       @tailrec
-      def iterate(min: Int, max: Int, attempt: Int): Int =
-        if (attempt <= 1) 1
-        else if(max % attempt == 0 && min % attempt == 0) attempt
-        else iterate(min, max, attempt - 1)
+      def traceShadow(from: Point, vector: (Int, Int), acc: Set[Point] = Set()): Set[Point] = {
+        val candidate = (from._1 + vector._1, from._2 + vector._2)
+        if(pointIsInside(candidate, size)) traceShadow(candidate, vector, acc + candidate)
+        else acc
+      }
 
-      iterate(sorted(0), sorted(1), sorted(0))
+      val shadowVector = getShadowVector(pov, at)
+      traceShadow(at, shadowVector)
+    }
+
+    def getVisibleAsteroids(pov: Point): Set[Point] = {
+      val otherAsteroids = asteroids - pov
+      val shadows = otherAsteroids.flatMap(a => getShadow(pov, a))
+      otherAsteroids.diff(shadows)
     }
   }
 
   def part1(map: String): Int = {
-    val lines = map.split("\n").filter(_.nonEmpty)
-
-    val rectangle = (lines.head.size, lines.size)
-
-    val asteroids: Set[Point] = lines.zipWithIndex.flatMap {
-      case (s, j) => s.zipWithIndex collect {
-        case (c, i) if c == '#' => (i, j)
-      }
-    }.toSet
-
-    def getVisibleFrom(asteroids: Set[Point], base: Point): Int = {
-
-      def getShadow(p: Point): Set[Point] = {
-        val vector = (p._1 - base._1, p._2 - base._2)
-        val gcd = getGcd(vector._1, vector._2)
-        val shadowVector = (vector._1 / gcd, vector._2 / gcd)
-
-        def pointIsInRectangle(point: Point, end: Point): Boolean = {
-          point._1 >= 0 && point._1 <= end._1 && point._2 >= 0 && point._2 <= end._2
-        }
-
-        @tailrec
-        def traceShadow(from: Point, vector: (Int, Int), acc: Set[Point] = Set()): Set[Point] = {
-          val candidate = (from._1 + vector._1, from._2 + vector._2)
-          if(pointIsInRectangle(candidate, rectangle)) traceShadow(candidate, vector, acc + candidate)
-          else acc
-        }
-
-        traceShadow(p, shadowVector)
-      }
-      val shadows = asteroids.flatMap(getShadow)
-      val visible = asteroids.diff(shadows)
-      visible.size
-    }
-
-    asteroids.map(a => getVisibleFrom(asteroids - a, a)).max
+    val space = Space(map)
+    space.asteroids.map(a => space.getVisibleAsteroids(a).size).max
   }
 
   def renderSpace(base: Point, shadows: Set[Point], asteroids: Set[Point], size: Point): String = {
